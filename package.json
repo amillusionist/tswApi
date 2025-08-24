@@ -1,18 +1,22 @@
 {
   "name": "tsw-api",
   "version": "1.0.0",
-  "description": "tsw backend api",
+  "description": "tsw backend api - Service Provider Platform",
   "main": "app.js",
   "scripts": {
-    "test": "test",
-    "start": "node app.js"
+    "test": "jest",
+    "start": "node app.js",
+    "dev": "nodemon app.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/amillusionist/tswApi.git"
   },
   "keywords": [
-    "expressjs"
+    "expressjs",
+    "service-provider",
+    "api",
+    "urban-clap"
   ],
   "author": "weblexia",
   "license": "UNLICENSED",
@@ -21,6 +25,21 @@
   },
   "homepage": "https://github.com/amillusionist/tswApi#readme",
   "dependencies": {
-    "express": "^5.1.0"
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "crypto": "^1.0.1",
+    "dotenv": "^16.3.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^7.1.5",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.0.0",
+    "multer": "^1.4.5-lts.1",
+    "nodemailer": "^6.9.7"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "nodemon": "^3.0.2"
   }
 }
