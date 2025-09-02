@@ -263,6 +263,119 @@ const getMe = async (req, res) => {
   }
 };
 
+// @desc    Send OTP for customer login
+// @route   POST /api/auth/login/user/send-otp
+// @access  Public
+const sendCustomerLoginOTP = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendResponse(res, 400, false, 'Validation error', errors.array());
+    }
+
+    const { email } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found with this email');
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return sendResponse(res, 401, false, 'Account is deactivated');
+    }
+
+    // Check if OTP was sent recently (rate limiting)
+    if (user.lastOTPSentAt) {
+      const timeDiff = Date.now() - user.lastOTPSentAt.getTime();
+      const minutesDiff = timeDiff / (1000 * 60);
+      
+      if (minutesDiff < 1) { // 1 minute cooldown
+        return sendResponse(res, 429, false, 'Please wait 1 minute before requesting another OTP');
+      }
+    }
+
+    // Generate OTP
+    const otp = user.generateLoginOTP();
+    await user.save();
+
+    // Send OTP via email
+    const message = `Your login OTP is: ${otp}\n\nThis OTP will expire in 5 minutes.\n\nIf you didn't request this OTP, please ignore this email.`;
+
+    try {
+      await sendEmail({
+        email: user.email,
+        subject: 'Login OTP',
+        message
+      });
+
+      sendResponse(res, 200, true, 'OTP sent successfully to your email');
+    } catch (error) {
+      console.error('Email sending error:', error);
+      // Clear OTP if email fails
+      user.clearLoginOTP();
+      await user.save();
+      return sendResponse(res, 500, false, 'Failed to send OTP. Please try again.');
+    }
+  } catch (error) {
+    console.error('Send customer login OTP error:', error);
+    sendResponse(res, 500, false, 'Server error');
+  }
+};
+
+// @desc    Verify OTP and login customer
+// @route   POST /api/auth/login/user/verify-otp
+// @access  Public
+const verifyCustomerLoginOTP = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendResponse(res, 400, false, 'Validation error', errors.array());
+    }
+
+    const { email, otp } = req.body;
+
+    // Check if user exists
+    const user = await User.findOne({ email });
+    if (!user) {
+      return sendResponse(res, 404, false, 'User not found with this email');
+    }
+
+    // Check if user is active
+    if (!user.isActive) {
+      return sendResponse(res, 401, false, 'Account is deactivated');
+    }
+
+    // Verify OTP
+    const isValidOTP = user.verifyLoginOTP(otp);
+    if (!isValidOTP) {
+      return sendResponse(res, 401, false, 'Invalid or expired OTP');
+    }
+
+    // Clear OTP after successful verification
+    user.clearLoginOTP();
+    await user.save();
+
+    // Generate token
+    const token = generateToken(user._id);
+
+    sendResponse(res, 200, true, 'Login successful', {
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        phone: user.phone,
+        role: user.role
+      },
+      token
+    });
+  } catch (error) {
+    console.error('Verify customer login OTP error:', error);
+    sendResponse(res, 500, false, 'Server error');
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -270,5 +383,7 @@ module.exports = {
   forgotPassword,
   resetPassword,
   adminAddUser,
-  getMe
+  getMe,
+  sendCustomerLoginOTP,
+  verifyCustomerLoginOTP
 };

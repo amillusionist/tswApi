@@ -5,7 +5,6 @@ const crypto = require('crypto');
 const userSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Name is required'],
     trim: true,
     maxlength: [50, 'Name cannot exceed 50 characters']
   },
@@ -29,7 +28,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['admin', 'manager', 'user', 'worker'],
+    enum: 'user',
     default: 'user'
   },
   isActive: {
@@ -40,48 +39,48 @@ const userSchema = new mongoose.Schema({
     type: String,
     default: null
   },
-  address: {
-    street: String,
-    city: String,
-    state: String,
-    zipCode: String
-  },
-  // Partner/Worker specific fields
-  skills: [{
-    type: String,
-    trim: true,
-    maxlength: [50, 'Skill cannot exceed 50 characters']
-  }],
-  experience: {
-    type: Number,
-    min: [0, 'Experience cannot be negative'],
-    default: 0
-  },
-  availability: {
-    isAvailable: {
-      type: Boolean,
-      default: true
-    },
-    availableDays: [{
-      type: String,
-      enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-    }],
-    availableTimeSlots: [{
-      startTime: {
-        type: String,
-        match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:MM format']
-      },
-      endTime: {
-        type: String,
-        match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:MM format']
-      }
-    }],
-    maxBookingsPerDay: {
-      type: Number,
-      default: 10,
-      min: [1, 'Max bookings per day must be at least 1']
-    }
-  },
+  // address: {
+  //   street: String,
+  //   city: String,
+  //   state: String,
+  //   zipCode: String
+  // },
+  // // Partner/Worker specific fields
+  // skills: [{
+  //   type: String,
+  //   trim: true,
+  //   maxlength: [50, 'Skill cannot exceed 50 characters']
+  // }],
+  // experience: {
+  //   type: Number,
+  //   min: [0, 'Experience cannot be negative'],
+  //   default: 0
+  // },
+  // availability: {
+  //   isAvailable: {
+  //     type: Boolean,
+  //     default: true
+  //   },
+  //   availableDays: [{
+  //     type: String,
+  //     enum: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+  //   }],
+  //   availableTimeSlots: [{
+  //     startTime: {
+  //       type: String,
+  //       match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:MM format']
+  //     },
+  //     endTime: {
+  //       type: String,
+  //       match: [/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Time must be in HH:MM format']
+  //     }
+  //   }],
+  //   maxBookingsPerDay: {
+  //     type: Number,
+  //     default: 10,
+  //     min: [1, 'Max bookings per day must be at least 1']
+  //   }
+  // },
   rating: {
     type: Number,
     default: 0,
@@ -112,7 +111,13 @@ const userSchema = new mongoose.Schema({
   phoneVerified: {
     type: Boolean,
     default: false
-  }
+  },
+  // OTP fields for customer login
+  loginOTP: {
+    code: String,
+    expiresAt: Date
+  },
+  lastOTPSentAt: Date
 }, {
   timestamps: true
 });
@@ -146,6 +151,42 @@ userSchema.methods.getResetPasswordToken = function() {
   this.resetPasswordExpire = Date.now() + 10 * 60 * 1000; // 10 minutes
 
   return resetToken;
+};
+
+// Generate login OTP
+userSchema.methods.generateLoginOTP = function() {
+  // Generate 6-digit OTP
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  
+  // Set OTP and expiry (5 minutes)
+  this.loginOTP = {
+    code: otp,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000) // 5 minutes
+  };
+  
+  this.lastOTPSentAt = new Date();
+  
+  return otp;
+};
+
+// Verify login OTP
+userSchema.methods.verifyLoginOTP = function(enteredOTP) {
+  if (!this.loginOTP || !this.loginOTP.code || !this.loginOTP.expiresAt) {
+    return false;
+  }
+  
+  // Check if OTP is expired
+  if (new Date() > this.loginOTP.expiresAt) {
+    return false;
+  }
+  
+  // Check if OTP matches
+  return this.loginOTP.code === enteredOTP;
+};
+
+// Clear login OTP
+userSchema.methods.clearLoginOTP = function() {
+  this.loginOTP = undefined;
 };
 
 module.exports = mongoose.model('User', userSchema);

@@ -342,6 +342,57 @@ const initializeDefaultMetaData = async (req, res) => {
   }
 };
 
+// @desc    Get app settings
+// @route   GET /api/settings
+// @access  Public
+const getAppSettings = async (req, res) => {
+  try {
+    const settings = await MetaData.findOne({ key: 'app_settings' });
+    
+    if (!settings) {
+      return sendResponse(res, 404, false, 'App settings not found');
+    }
+
+    sendResponse(res, 200, true, 'App settings retrieved successfully', {
+      settings: settings.value
+    });
+  } catch (error) {
+    console.error('Get app settings error:', error);
+    sendResponse(res, 500, false, 'Server error');
+  }
+};
+
+// @desc    Update app settings
+// @route   PUT /api/settings
+// @access  Private (Admin only)
+const updateAppSettings = async (req, res) => {
+  try {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return sendResponse(res, 400, false, 'Validation error', errors.array());
+    }
+
+    const { value } = req.body;
+
+    const settings = await MetaData.findOneAndUpdate(
+      { key: 'app_settings' },
+      { 
+        value,
+        lastUpdatedBy: req.user.id,
+        lastUpdated: Date.now()
+      },
+      { new: true, upsert: true }
+    );
+
+    sendResponse(res, 200, true, 'App settings updated successfully', {
+      settings: settings.value
+    });
+  } catch (error) {
+    console.error('Update app settings error:', error);
+    sendResponse(res, 500, false, 'Server error');
+  }
+};
+
 module.exports = {
   getMetaData,
   createOrUpdateMetaData,
@@ -350,5 +401,7 @@ module.exports = {
   getPublicMetaData,
   getMetaDataCategories,
   bulkUpdateMetaData,
-  initializeDefaultMetaData
+  initializeDefaultMetaData,
+  getAppSettings,
+  updateAppSettings
 };

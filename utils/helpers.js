@@ -1,4 +1,5 @@
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 
 // Generate JWT token
 const generateToken = (id) => {
@@ -7,11 +8,8 @@ const generateToken = (id) => {
   });
 };
 
-// Send email (placeholder - implement with nodemailer)
-const sendEmail = async (options) => {
-  // Implementation with nodemailer would go here
-  console.log('Email sent:', options);
-};
+
+
 
 // Generate random token
 const generateRandomToken = (length = 32) => {
@@ -146,7 +144,6 @@ const sanitizeInput = (input) => {
 
 module.exports = {
   generateToken,
-  sendEmail,
   generateRandomToken,
   sendResponse,
   paginateResults,

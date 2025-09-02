@@ -38,16 +38,52 @@ const createServiceValidation = [
     .withMessage('Original price must be a positive number'),
   body('featuredImage')
     .trim()
-    .isURL()
-    .withMessage('Featured image must be a valid URL'),
+    .custom((value) => {
+      // Allow both absolute URLs and relative paths
+      if (!value) return true; // Allow empty values if optional
+      
+      // Check if it's a valid URL (absolute)
+      const urlPattern = /^https?:\/\/.+/;
+      if (urlPattern.test(value)) {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      
+      // Check if it's a valid relative path
+      const pathPattern = /^\/uploads\/.+/;
+      return pathPattern.test(value);
+    })
+    .withMessage('Featured image must be a valid URL or upload path'),
   body('images')
     .optional()
     .isArray()
     .withMessage('Images must be an array'),
   body('images.*.imageUrl')
     .optional()
-    .isURL()
-    .withMessage('Image URL must be valid'),
+    .custom((value) => {
+      // Allow both absolute URLs and relative paths
+      if (!value) return true; // Allow empty values if optional
+      
+      // Check if it's a valid URL (absolute)
+      const urlPattern = /^https?:\/\/.+/;
+      if (urlPattern.test(value)) {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      
+      // Check if it's a valid relative path
+      const pathPattern = /^\/uploads\/.+/;
+      return pathPattern.test(value);
+    })
+    .withMessage('Image URL must be a valid URL or upload path'),
   body('images.*.altText')
     .optional()
     .trim()
@@ -222,16 +258,52 @@ const updateServiceValidation = [
   body('featuredImage')
     .optional()
     .trim()
-    .isURL()
-    .withMessage('Featured image must be a valid URL'),
+    .custom((value) => {
+      // Allow both absolute URLs and relative paths
+      if (!value) return true; // Allow empty values if optional
+      
+      // Check if it's a valid URL (absolute)
+      const urlPattern = /^https?:\/\/.+/;
+      if (urlPattern.test(value)) {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      
+      // Check if it's a valid relative path
+      const pathPattern = /^\/uploads\/.+/;
+      return pathPattern.test(value);
+    })
+    .withMessage('Featured image must be a valid URL or upload path'),
   body('images')
     .optional()
     .isArray()
     .withMessage('Images must be an array'),
   body('images.*.imageUrl')
     .optional()
-    .isURL()
-    .withMessage('Image URL must be valid'),
+    .custom((value) => {
+      // Allow both absolute URLs and relative paths
+      if (!value) return true; // Allow empty values if optional
+      
+      // Check if it's a valid URL (absolute)
+      const urlPattern = /^https?:\/\/.+/;
+      if (urlPattern.test(value)) {
+        try {
+          new URL(value);
+          return true;
+        } catch {
+          return false;
+        }
+      }
+      
+      // Check if it's a valid relative path
+      const pathPattern = /^\/uploads\/.+/;
+      return pathPattern.test(value);
+    })
+    .withMessage('Image URL must be a valid URL or upload path'),
   body('images.*.altText')
     .optional()
     .trim()

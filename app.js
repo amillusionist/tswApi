@@ -22,9 +22,11 @@ const metaRoutes = require('./routes/meta');
 const addonRoutes = require('./routes/addons');
 const categoryRoutes = require('./routes/categories');
 const uploadRoutes = require('./routes/upload');
+const settingsRoutes = require('./routes/settings');
 
 // Initialize express app
 const app = express();
+app.set("trust proxy", 1);
 
 // Connect to database
 connectDB();
@@ -51,23 +53,24 @@ app.use(helmet({
 // CORS configuration
 const allowedOrigins = process.env.ALLOWED_ORIGINS 
   ? process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim())
-  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001'];
+  : ['http://localhost:3000', 'http://localhost:5173', 'http://localhost:3001', 'https://689e401dbc5c.ngrok-free.app'];
 
 // Log allowed origins for debugging
 console.log('🌐 Allowed CORS origins:', allowedOrigins);
 
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+  // origin: function (origin, callback) {
+  //   // Allow requests with no origin (like mobile apps or curl requests)
+  //   if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log(`❌ CORS blocked origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  //   if (allowedOrigins.indexOf(origin) !== -1) {
+  //     callback(null, true);
+  //   } else {
+  //     console.log(`❌ CORS blocked origin: ${origin}`);
+  //     callback(new Error('Not allowed by CORS'));
+  //   }
+  // },
+  origin: '*',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -90,9 +93,17 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Static files with proper headers for uploads
 app.use('/public', express.static('public', {
-  setHeaders: (res, path) => {
-    // Set CORS headers for uploaded files
-    res.setHeader('Access-Control-Allow-Origin', '*');
+  setHeaders: (res, path, req) => {
+    // Get origin from request
+    const origin = req.get('Origin');
+    
+    // Set CORS headers based on allowed origins
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      res.setHeader('Access-Control-Allow-Origin', origin || '*');
+    } else {
+      res.setHeader('Access-Control-Allow-Origin', 'null');
+    }
+    
     res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
     res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
     
@@ -107,6 +118,7 @@ app.use('/public', express.static('public', {
 app.get('/favicon.ico', (req, res) => {
   res.status(204).end(); // No content response
 });
+
 
 // Specific route for serving uploaded files with proper headers
 app.get('/uploads/:type/:filename', (req, res) => {
@@ -126,8 +138,16 @@ app.get('/uploads/:type/:filename', (req, res) => {
     return res.status(404).json({ success: false, message: 'File not found' });
   }
   
-  // Set proper headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  // Get origin from request
+  const origin = req.get('Origin');
+  
+  // Set CORS headers based on allowed origins
+  if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    res.setHeader('Access-Control-Allow-Origin', origin || '*');
+  } else {
+    res.setHeader('Access-Control-Allow-Origin', 'null');
+  }
+  
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
   
@@ -162,6 +182,7 @@ app.use('/api/meta', metaRoutes);
 app.use('/api/addons', addonRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // Welcome route
 app.get('/', (req, res) => {
@@ -181,7 +202,9 @@ app.get('/', (req, res) => {
       addons: '/api/addons',
       categories: '/api/categories',
       upload: '/api/upload',
+      settings: '/api/settings',
       health: '/health'
+
     },
     documentation: 'Check the README.md file for complete API documentation'
   });

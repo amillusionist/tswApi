@@ -8,8 +8,11 @@ const {
   forgotPassword,
   resetPassword,
   adminAddUser,
-  getMe
+  getMe,
+  sendCustomerLoginOTP,
+  verifyCustomerLoginOTP
 } = require('../controllers/authController');
+
 
 const router = express.Router();
 
@@ -52,6 +55,24 @@ const forgotPasswordValidation = [
     .withMessage('Please provide a valid email')
 ];
 
+const customerLoginOTPValidation = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email')
+];
+
+const verifyOTPValidation = [
+  body('email')
+    .isEmail()
+    .normalizeEmail()
+    .withMessage('Please provide a valid email'),
+  body('otp')
+    .isLength({ min: 6, max: 6 })
+    .isNumeric()
+    .withMessage('OTP must be a 6-digit number')
+];
+
 const resetPasswordValidation = [
   body('password')
     .isLength({ min: 6 })
@@ -86,5 +107,9 @@ router.post('/forgot-password', forgotPasswordValidation, forgotPassword);
 router.put('/reset-password/:token', resetPasswordValidation, resetPassword);
 router.post('/admin-add-user', protect, authorize('admin'), adminAddUserValidation, adminAddUser);
 router.get('/me', protect, getMe);
+
+// Customer OTP Login Routes
+router.post('/login/user/send-otp', customerLoginOTPValidation, sendCustomerLoginOTP);
+router.post('/login/user/verify-otp', verifyOTPValidation, verifyCustomerLoginOTP);
 
 module.exports = router;
