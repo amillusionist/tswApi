@@ -87,8 +87,8 @@ const createCategory = async (req, res) => {
     const category = await Category.create({
       name,
       description,
-      icon,
-      image,
+      icon: '',
+      image: image.replace(/^https?:\/\/[^/]+/, ''), // sirf relative path rakhega,
       active: active !== undefined ? active : true
     });
 

@@ -16,8 +16,8 @@ const categorySchema = new mongoose.Schema({
   },
   icon: {
     type: String,
-    required: [false, 'Icon is required'],
-    trim: true
+    required: false,
+    trim: false
   },
   image: {
     type: String,

@@ -157,6 +157,10 @@ app.get('/uploads/:type/:filename', (req, res) => {
   }
   
   // Serve the file
+  res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'); // ← add here
+if (filename.match(/\.(jpg|jpeg|png|gif|svg|webp|ico)$/i)) {
+  res.setHeader('Cache-Control', 'public, max-age=31536000'); // 1 year cache
+}
   res.sendFile(filePath);
 });
 

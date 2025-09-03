@@ -21,14 +21,16 @@ const createCategoryValidation = [
     .trim()
     .isLength({ min: 10, max: 500 })
     .withMessage('Description must be between 10 and 500 characters'),
-  body('icon')
-    .trim()
-    .notEmpty()
-    .withMessage('Icon is required'),
+  // body('icon')
+  //   .trim()
+  //   .optional()
+  //   .withMessage('Icon is required'),
   body('image')
-    .trim()
-    .isURL()
-    .withMessage('Image must be a valid URL'),
+  .trim()
+  .notEmpty()
+  .withMessage('Image is required')
+  .isString()
+  .withMessage('Image must be a valid string'),
   body('active')
     .optional()
     .isBoolean()
@@ -46,11 +48,11 @@ const updateCategoryValidation = [
     .trim()
     .isLength({ min: 10, max: 500 })
     .withMessage('Description must be between 10 and 500 characters'),
-  body('icon')
-    .optional()
-    .trim()
-    .notEmpty()
-    .withMessage('Icon cannot be empty'),
+  // body('icon')
+  //   .optional()
+  //   .trim()
+  //   .optional()
+  //   .withMessage('Icon cannot be empty'),
   body('image')
     .optional()
     .trim()
