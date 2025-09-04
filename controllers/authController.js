@@ -1,5 +1,6 @@
 const User = require('../models/User');
-const { generateToken, sendEmail, generateRandomToken, sendResponse } = require('../utils/helpers');
+const { generateToken,  generateRandomToken, sendResponse } = require('../utils/helpers');
+const { sendMail } = require('../services/emailService');
 const { validationResult } = require('express-validator');
 const crypto = require('crypto');
 
@@ -138,10 +139,10 @@ const forgotPassword = async (req, res) => {
     const message = `You are receiving this email because you (or someone else) has requested the reset of a password. Please make a PUT request to: \n\n ${resetUrl}`;
 
     try {
-      await sendEmail({
+      await sendMail({
         email: user.email,
         subject: 'Password reset token',
-        message
+        html: message
       });
 
       sendResponse(res, 200, true, 'Email sent');
@@ -276,9 +277,27 @@ const sendCustomerLoginOTP = async (req, res) => {
     const { email } = req.body;
 
     // Check if user exists
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
+    
+    // If user doesn't exist, create one with template data
     if (!user) {
-      return sendResponse(res, 404, false, 'User not found with this email');
+      try {
+        // Create user with template data
+        const templateData = {
+          name: `User_${Date.now()}`, // Generate a temporary name
+          email: email,
+          password: crypto.randomBytes(16).toString('hex'), // Generate random password
+          phone: '1234567890', // Empty phone
+          role: 'user', // Default role
+          isActive: true // Set as active
+        };
+
+        user = await User.create(templateData);
+        console.log('New user created for OTP:', user.email);
+      } catch (createError) {
+        console.error('Error creating user:', createError);
+        return sendResponse(res, 500, false, 'Failed to create user account');
+      }
     }
 
     // Check if user is active
@@ -304,10 +323,10 @@ const sendCustomerLoginOTP = async (req, res) => {
     const message = `Your login OTP is: ${otp}\n\nThis OTP will expire in 5 minutes.\n\nIf you didn't request this OTP, please ignore this email.`;
 
     try {
-      await sendEmail({
+      await sendMail({
         email: user.email,
         subject: 'Login OTP',
-        message
+        html: message
       });
 
       sendResponse(res, 200, true, 'OTP sent successfully to your email');

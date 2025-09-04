@@ -54,10 +54,10 @@ const updateCategoryValidation = [
   //   .optional()
   //   .withMessage('Icon cannot be empty'),
   body('image')
-    .optional()
-    .trim()
-    .isURL()
-    .withMessage('Image must be a valid URL'),
+  .optional()
+  .trim()
+  .matches(/^\/uploads\/[a-zA-Z0-9/_\-.]+$/) // sirf /uploads/... path allow karega
+  .withMessage('Image must be a valid upload path'),
   body('active')
     .optional()
     .isBoolean()
